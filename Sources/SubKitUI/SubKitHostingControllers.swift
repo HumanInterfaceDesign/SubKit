@@ -42,4 +42,22 @@ public final class SubKitSubscriptionStoreViewController: UIHostingController<Su
         nil
     }
 }
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(tvOS, unavailable)
+public final class SubKitManageSubscriptionsButtonController: UIHostingController<SubKitManageSubscriptionsButton<Text>> {
+    public init(title: LocalizedStringKey = "Manage Subscription", subscriptionGroupID: String? = nil) {
+        super.init(
+            rootView: SubKitManageSubscriptionsButton(
+                title,
+                subscriptionGroupID: subscriptionGroupID
+            )
+        )
+    }
+
+    @available(*, unavailable)
+    required dynamic init?(coder aDecoder: NSCoder) {
+        nil
+    }
+}
 #endif

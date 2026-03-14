@@ -180,6 +180,30 @@ You can also use a subscription group ID:
 SubKitSubscriptionStoreView(groupID: "5982C3D1")
 ```
 
+### Manage Or Cancel A Subscription
+
+StoreKit can present Apple’s built-in subscription-management sheet from inside your app:
+
+```swift
+SubKitManageSubscriptionsButton()
+```
+
+If you want to scope the sheet to a specific subscription group:
+
+```swift
+SubKitManageSubscriptionsButton(
+  subscriptionGroupID: "5982C3D1"
+)
+```
+
+You can also provide a custom label:
+
+```swift
+SubKitManageSubscriptionsButton(subscriptionGroupID: "5982C3D1") {
+  Label("Manage Subscription", systemImage: "gear")
+}
+```
+
 ## UIKit UI Usage
 
 Host the SwiftUI wrappers in UIKit:
@@ -208,6 +232,15 @@ let controller = SubKitSubscriptionStoreViewController(
 )
 ```
 
+To host the built-in subscription-management sheet trigger in UIKit:
+
+```swift
+let controller = SubKitManageSubscriptionsButtonController(
+  title: "Manage Subscription",
+  subscriptionGroupID: "5982C3D1"
+)
+```
+
 ## Notes
 
 - v1 supports auto-renewable subscriptions and non-consumables.
@@ -216,6 +249,7 @@ let controller = SubKitSubscriptionStoreViewController(
 - Send StoreKit transaction data or JWS to your backend after a successful purchase.
 - The `productIDs`-backed UI wrappers can show `ContentUnavailableView` for empty and error states.
 - The `groupID`-only subscription view still relies on Apple’s `SubscriptionStoreView(groupID:)`, because StoreKit does not provide a direct way to enumerate every product in a subscription group from the group ID alone.
+- `SubKitManageSubscriptionsButton` presents Apple’s subscription-management UI, which lets customers manage or cancel App Store subscriptions from inside your app.
 
 ## Previews
 

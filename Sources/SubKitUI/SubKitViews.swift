@@ -362,6 +362,76 @@ public struct SubKitSubscriptionStoreView: View {
     }
 }
 
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+public struct SubKitManageSubscriptionsButton<Label: View>: View {
+    private let subscriptionGroupID: String?
+    private let label: () -> Label
+
+    @State private var isPresented = false
+
+    public init(
+        subscriptionGroupID: String? = nil,
+        @ViewBuilder label: @escaping () -> Label
+    ) {
+        self.subscriptionGroupID = subscriptionGroupID
+        self.label = label
+    }
+
+    public var body: some View {
+        Button {
+            self.isPresented = true
+        } label: {
+            self.label()
+        }
+        .modifier(ManageSubscriptionsSheetModifier(
+            isPresented: self.$isPresented,
+            subscriptionGroupID: self.subscriptionGroupID
+        ))
+    }
+}
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+extension SubKitManageSubscriptionsButton where Label == Text {
+    public init(
+        _ title: LocalizedStringKey = "Manage Subscription",
+        subscriptionGroupID: String? = nil
+    ) {
+        self.init(subscriptionGroupID: subscriptionGroupID) {
+            Text(title)
+        }
+    }
+}
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+private struct ManageSubscriptionsSheetModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let subscriptionGroupID: String?
+
+    func body(content: Content) -> some View {
+        if let subscriptionGroupID {
+            if #available(iOS 17.0, *) {
+                content.manageSubscriptionsSheet(
+                    isPresented: self.$isPresented,
+                    subscriptionGroupID: subscriptionGroupID
+                )
+            } else {
+                content.manageSubscriptionsSheet(isPresented: self.$isPresented)
+            }
+        } else {
+            content.manageSubscriptionsSheet(isPresented: self.$isPresented)
+        }
+    }
+}
+
 #Preview("SubKit Product") {
     if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
         SubKitProductView(id: "com.example.subkit.lifetime")
