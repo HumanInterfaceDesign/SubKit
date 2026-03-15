@@ -182,7 +182,31 @@ SubKitSubscriptionStoreView(groupID: "5982C3D1")
 
 ### Manage Or Cancel A Subscription
 
-StoreKit can present Apple’s built-in subscription-management sheet from inside your app:
+StoreKit can present Apple’s built-in subscription-management sheet from inside your app.
+
+If you want the call site to control presentation, create a model and toggle it:
+
+```swift
+@State var manageSubscriptions = SubKitManageSubscriptionsModel(
+  subscriptionGroupID: "5982C3D1"
+)
+```
+
+Mount the presenter somewhere in the view tree:
+
+```swift
+SubKitManageSubscriptionsPresenter(model: manageSubscriptions)
+```
+
+Then trigger it from any UI:
+
+```swift
+Button("Manage Subscription") {
+  manageSubscriptions.present()
+}
+```
+
+Or use the built-in button wrapper:
 
 ```swift
 SubKitManageSubscriptionsButton()
@@ -194,6 +218,14 @@ If you want to scope the sheet to a specific subscription group:
 SubKitManageSubscriptionsButton(
   subscriptionGroupID: "5982C3D1"
 )
+```
+
+You can also give the button an external model:
+
+```swift
+SubKitManageSubscriptionsButton(model: manageSubscriptions) {
+  Label("Manage Subscription", systemImage: "gear")
+}
 ```
 
 You can also provide a custom label:
@@ -232,13 +264,35 @@ let controller = SubKitSubscriptionStoreViewController(
 )
 ```
 
-To host the built-in subscription-management sheet trigger in UIKit:
+For UIKit, mount the bridge controller as a child of the view controller that should present Apple’s subscription-management sheet:
 
 ```swift
-let controller = SubKitManageSubscriptionsButtonController(
-  title: "Manage Subscription",
+let manageSubscriptions = SubKitManageSubscriptionsModel(
   subscriptionGroupID: "5982C3D1"
 )
+
+let presenter = SubKitManageSubscriptionsViewController(
+  model: manageSubscriptions
+)
+
+presenter.attach(to: self)
+```
+
+Then trigger the sheet whenever you want:
+
+```swift
+manageSubscriptions.present()
+```
+
+You can also let the controller create its own model:
+
+```swift
+let presenter = SubKitManageSubscriptionsViewController(
+  subscriptionGroupID: "5982C3D1"
+)
+presenter.attach(to: self)
+
+presenter.model.present()
 ```
 
 ## Notes
@@ -249,7 +303,9 @@ let controller = SubKitManageSubscriptionsButtonController(
 - Send StoreKit transaction data or JWS to your backend after a successful purchase.
 - The `productIDs`-backed UI wrappers can show `ContentUnavailableView` for empty and error states.
 - The `groupID`-only subscription view still relies on Apple’s `SubscriptionStoreView(groupID:)`, because StoreKit does not provide a direct way to enumerate every product in a subscription group from the group ID alone.
-- `SubKitManageSubscriptionsButton` presents Apple’s subscription-management UI, which lets customers manage or cancel App Store subscriptions from inside your app.
+- `SubKitManageSubscriptionsButton` and `SubKitManageSubscriptionsPresenter` present Apple’s subscription-management UI, which lets customers manage or cancel App Store subscriptions from inside your app.
+- In SwiftUI, manage-subscriptions state is owned with `@State` and driven by `SubKitManageSubscriptionsModel`.
+- In UIKit, `SubKitManageSubscriptionsViewController` is intended to be attached as a child view controller and triggered by toggling its model.
 
 ## Previews
 

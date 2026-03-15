@@ -45,19 +45,50 @@ public final class SubKitSubscriptionStoreViewController: UIHostingController<Su
 
 @available(iOS 15.0, visionOS 1.0, *)
 @available(tvOS, unavailable)
-public final class SubKitManageSubscriptionsButtonController: UIHostingController<SubKitManageSubscriptionsButton<Text>> {
-    public init(title: LocalizedStringKey = "Manage Subscription", subscriptionGroupID: String? = nil) {
-        super.init(
-            rootView: SubKitManageSubscriptionsButton(
-                title,
-                subscriptionGroupID: subscriptionGroupID
-            )
-        )
+public final class SubKitManageSubscriptionsViewController: UIHostingController<SubKitManageSubscriptionsPresenter> {
+    public let model: SubKitManageSubscriptionsModel
+
+    public init(model: SubKitManageSubscriptionsModel) {
+        self.model = model
+        super.init(rootView: SubKitManageSubscriptionsPresenter(model: model))
+    }
+
+    public init(subscriptionGroupID: String? = nil) {
+        let model = SubKitManageSubscriptionsModel(subscriptionGroupID: subscriptionGroupID)
+        self.model = model
+        super.init(rootView: SubKitManageSubscriptionsPresenter(model: model))
     }
 
     @available(*, unavailable)
     required dynamic init?(coder aDecoder: NSCoder) {
         nil
     }
+
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+        self.view.backgroundColor = .clear
+        self.view.isOpaque = false
+        self.view.isUserInteractionEnabled = false
+    }
+
+    public func attach(to parent: UIViewController) {
+        guard self.parent !== parent else { return }
+
+        self.willMove(toParent: nil)
+        self.view.removeFromSuperview()
+        self.removeFromParent()
+
+        parent.addChild(self)
+        self.view.translatesAutoresizingMaskIntoConstraints = false
+        parent.view.addSubview(self.view)
+        NSLayoutConstraint.activate([
+            self.view.topAnchor.constraint(equalTo: parent.view.topAnchor),
+            self.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+            self.view.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+            self.view.bottomAnchor.constraint(equalTo: parent.view.bottomAnchor),
+        ])
+        self.didMove(toParent: parent)
+    }
 }
+
 #endif

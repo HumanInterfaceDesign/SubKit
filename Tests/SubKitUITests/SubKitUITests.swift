@@ -18,5 +18,21 @@ struct SubKitUITests {
         _ = productView.body
         _ = storeView.body
         _ = subscriptionView.body
+
+        #if os(iOS) || os(visionOS)
+        if #available(iOS 15.0, visionOS 1.0, *) {
+            let manageSubscriptionsButton = SubKitManageSubscriptionsButton(
+                model: SubKitManageSubscriptionsModel(subscriptionGroupID: "5982C3D1")
+            ) {
+                Text("Manage Subscription")
+            }
+            let manageSubscriptionsPresenter = SubKitManageSubscriptionsPresenter(
+                model: SubKitManageSubscriptionsModel(subscriptionGroupID: "5982C3D1")
+            )
+
+            _ = manageSubscriptionsButton.body
+            _ = manageSubscriptionsPresenter.body
+        }
+        #endif
     }
 }

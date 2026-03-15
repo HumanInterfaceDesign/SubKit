@@ -1,6 +1,7 @@
 import StoreKit
 import SubKit
 import SwiftUI
+import Observation
 
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 private enum ProductLoadState<Value> {
@@ -366,30 +367,153 @@ public struct SubKitSubscriptionStoreView: View {
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 @available(watchOS, unavailable)
+@MainActor
+@Observable
+public final class SubKitManageSubscriptionsModel {
+    public var isPresented = false
+    public let subscriptionGroupID: String?
+
+    public init(subscriptionGroupID: String? = nil) {
+        self.subscriptionGroupID = subscriptionGroupID
+    }
+
+    public func present() {
+        self.isPresented = true
+    }
+
+    public func dismiss() {
+        self.isPresented = false
+    }
+}
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+public struct SubKitManageSubscriptionsPresenter: View {
+    public let model: SubKitManageSubscriptionsModel
+
+    public init(model: SubKitManageSubscriptionsModel) {
+        self.model = model
+    }
+
+    public var body: some View {
+        @Bindable var model = self.model
+
+        Color.clear
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .modifier(ManageSubscriptionsSheetModifier(
+                isPresented: $model.isPresented,
+                subscriptionGroupID: model.subscriptionGroupID
+            ))
+    }
+}
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
 public struct SubKitManageSubscriptionsButton<Label: View>: View {
-    private let subscriptionGroupID: String?
+    private enum Source {
+        case external(SubKitManageSubscriptionsModel)
+        case owned(String?)
+    }
+
+    private let source: Source
     private let label: () -> Label
 
-    @State private var isPresented = false
+    public init(
+        model: SubKitManageSubscriptionsModel,
+        @ViewBuilder label: @escaping () -> Label
+    ) {
+        self.source = .external(model)
+        self.label = label
+    }
 
     public init(
         subscriptionGroupID: String? = nil,
         @ViewBuilder label: @escaping () -> Label
     ) {
-        self.subscriptionGroupID = subscriptionGroupID
+        self.source = .owned(subscriptionGroupID)
         self.label = label
     }
 
+    @ViewBuilder
     public var body: some View {
-        Button {
-            self.isPresented = true
-        } label: {
+        switch self.source {
+        case let .external(model):
+            ExternalManageSubscriptionsButton(model: model, label: self.label)
+        case let .owned(subscriptionGroupID):
+            OwnedManageSubscriptionsButton(
+                subscriptionGroupID: subscriptionGroupID,
+                label: self.label
+            )
+        }
+    }
+}
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+private struct ExternalManageSubscriptionsButton<Label: View>: View {
+    let model: SubKitManageSubscriptionsModel
+    private let label: () -> Label
+
+    init(
+        model: SubKitManageSubscriptionsModel,
+        @ViewBuilder label: @escaping () -> Label
+    ) {
+        self.model = model
+        self.label = label
+    }
+
+    var body: some View {
+        Button(action: self.manageSubscriptionButtonTapped) {
             self.label()
         }
-        .modifier(ManageSubscriptionsSheetModifier(
-            isPresented: self.$isPresented,
-            subscriptionGroupID: self.subscriptionGroupID
-        ))
+        .background {
+            SubKitManageSubscriptionsPresenter(model: self.model)
+        }
+    }
+
+    private func manageSubscriptionButtonTapped() {
+        self.model.present()
+    }
+}
+
+@available(iOS 15.0, visionOS 1.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+private struct OwnedManageSubscriptionsButton<Label: View>: View {
+    @State private var model: SubKitManageSubscriptionsModel
+    private let label: () -> Label
+
+    init(
+        subscriptionGroupID: String?,
+        @ViewBuilder label: @escaping () -> Label
+    ) {
+        self._model = State(
+            initialValue: SubKitManageSubscriptionsModel(
+                subscriptionGroupID: subscriptionGroupID
+            )
+        )
+        self.label = label
+    }
+
+    var body: some View {
+        Button(action: self.manageSubscriptionButtonTapped) {
+            self.label()
+        }
+        .background {
+            SubKitManageSubscriptionsPresenter(model: self.model)
+        }
+    }
+
+    private func manageSubscriptionButtonTapped() {
+        self.model.present()
     }
 }
 
@@ -398,6 +522,15 @@ public struct SubKitManageSubscriptionsButton<Label: View>: View {
 @available(tvOS, unavailable)
 @available(watchOS, unavailable)
 extension SubKitManageSubscriptionsButton where Label == Text {
+    public init(
+        _ title: LocalizedStringKey = "Manage Subscription",
+        model: SubKitManageSubscriptionsModel
+    ) {
+        self.init(model: model) {
+            Text(title)
+        }
+    }
+
     public init(
         _ title: LocalizedStringKey = "Manage Subscription",
         subscriptionGroupID: String? = nil
