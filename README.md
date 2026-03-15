@@ -180,6 +180,59 @@ You can also use a subscription group ID:
 SubKitSubscriptionStoreView(groupID: "5982C3D1")
 ```
 
+You can also scope the store to relationship-specific flows, such as upgrades:
+
+```swift
+SubKitSubscriptionStoreView(
+  groupID: "5982C3D1",
+  visibleRelationships: .upgrade
+)
+```
+
+### StoreKit Modifiers
+
+Because the wrappers are ordinary SwiftUI views around Apple's StoreKit views, you can chain StoreKit SwiftUI modifiers directly on them.
+
+Subscription examples:
+
+```swift
+SubKitSubscriptionStoreView(groupID: "5982C3D1") {
+  PassMarketingContent()
+}
+.storeButton(.visible, for: .redeemCode, .policies)
+.subscriptionStorePolicyForegroundStyle(.white)
+.subscriptionStoreButtonLabel(.multiline.displayName)
+.subscriptionStoreControlStyle(.buttons)
+```
+
+You can also react to StoreKit-driven purchases from descendant merchandising views:
+
+```swift
+SubKitStoreView(ids: ["com.example.subkit.lifetime"])
+  .onInAppPurchaseStart { product in
+    print("Starting purchase for \\(product.id)")
+  }
+  .onInAppPurchaseCompletion { product, result in
+    print("Completed purchase for \\(product.id): \\(result)")
+  }
+```
+
+Common modifiers and tasks you can use directly on `SubKitUI` views include:
+
+- `.storeButton(..., for: .redeemCode, .policies, .restorePurchases, .signIn)`
+- `.subscriptionStoreSignInAction { ... }`
+- `.subscriptionStorePolicyForegroundStyle(...)`
+- `.subscriptionStoreButtonLabel(...)`
+- `.subscriptionStoreControlStyle(...)`
+- `.subscriptionStoreControlIcon { ... }`
+- `.backgroundStyle(...)`
+- `.productViewStyle(...)`
+- `.onInAppPurchaseStart { ... }`
+- `.onInAppPurchaseCompletion { ... }`
+- `.subscriptionStatusTask(for:)`
+- `.currentEntitlementTask(for:)`
+- `.storeProductsTask(for:)`
+
 ### Manage Or Cancel A Subscription
 
 StoreKit can present Apple’s built-in subscription-management sheet from inside your app.
@@ -264,36 +317,48 @@ let controller = SubKitSubscriptionStoreViewController(
 )
 ```
 
-For UIKit, mount the bridge controller as a child of the view controller that should present Apple’s subscription-management sheet:
+If you need StoreKit SwiftUI modifiers in UIKit, host the SwiftUI view directly instead of using the convenience controller:
 
 ```swift
-let manageSubscriptions = SubKitManageSubscriptionsModel(
-  subscriptionGroupID: "5982C3D1"
-)
+let view = SubKitSubscriptionStoreView(groupID: "5982C3D1")
+  .storeButton(.visible, for: .redeemCode, .policies)
+  .subscriptionStorePolicyForegroundStyle(.white)
 
-let presenter = SubKitManageSubscriptionsViewController(
-  model: manageSubscriptions
-)
-
-presenter.attach(to: self)
+let controller = UIHostingController(rootView: view)
 ```
 
-Then trigger the sheet whenever you want:
+### UIKit Manage Subscriptions
+
+For UIKit, the more reliable approach is to host the SwiftUI button directly and add it as a child view controller:
 
 ```swift
-manageSubscriptions.present()
+final class SettingsViewController: UIViewController {
+  private lazy var manageSubscriptionsButtonController = UIHostingController(
+    rootView: SubKitManageSubscriptionsButton(
+      subscriptionGroupID: "5982C3D1"
+    ) {
+      Label("Manage Subscription", systemImage: "gear")
+    }
+  )
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    addChild(manageSubscriptionsButtonController)
+    view.addSubview(manageSubscriptionsButtonController.view)
+    manageSubscriptionsButtonController.view.translatesAutoresizingMaskIntoConstraints = false
+
+    NSLayoutConstraint.activate([
+      manageSubscriptionsButtonController.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      manageSubscriptionsButtonController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24),
+    ])
+
+    manageSubscriptionsButtonController.didMove(toParent: self)
+  }
+}
 ```
 
-You can also let the controller create its own model:
-
-```swift
-let presenter = SubKitManageSubscriptionsViewController(
-  subscriptionGroupID: "5982C3D1"
-)
-presenter.attach(to: self)
-
-presenter.model.present()
-```
+That keeps the actual StoreKit SwiftUI button in the view hierarchy, which has been much more reliable than trying to bridge `manageSubscriptionsSheet` through an invisible UIKit presenter.
 
 ## Notes
 
@@ -303,9 +368,14 @@ presenter.model.present()
 - Send StoreKit transaction data or JWS to your backend after a successful purchase.
 - The `productIDs`-backed UI wrappers can show `ContentUnavailableView` for empty and error states.
 - The `groupID`-only subscription view still relies on Apple’s `SubscriptionStoreView(groupID:)`, because StoreKit does not provide a direct way to enumerate every product in a subscription group from the group ID alone.
+- `visibleRelationships` is supported on the `groupID` subscription initializer, so upgrade, downgrade, crossgrade, and current-plan focused views are available there.
+- `SubKitSubscriptionStoreView` does not currently expose control over the initially selected subscription plan. On the current public StoreKit API, Apple chooses the default selection.
+- Many advanced StoreKit SwiftUI capabilities are available by chaining modifiers directly on the wrappers rather than through dedicated `SubKit` APIs.
+- The UIKit convenience controllers are intentionally thin and do not expose configuration points for SwiftUI StoreKit modifiers. Use `UIHostingController` directly when you need modifier-based customization.
 - `SubKitManageSubscriptionsButton` and `SubKitManageSubscriptionsPresenter` present Apple’s subscription-management UI, which lets customers manage or cancel App Store subscriptions from inside your app.
 - In SwiftUI, manage-subscriptions state is owned with `@State` and driven by `SubKitManageSubscriptionsModel`.
-- In UIKit, `SubKitManageSubscriptionsViewController` is intended to be attached as a child view controller and triggered by toggling its model.
+- For UIKit, hosting `SubKitManageSubscriptionsButton` in a `UIHostingController` is the recommended subscription-management integration.
+- `SubKitUI` focuses on turnkey wrappers around Apple's built-in merchandising views. It does not yet provide a higher-level API for fully custom StoreKit SwiftUI paywalls built around `storeProductsTask`, `Product.CollectionTaskState`, or custom subscription pickers.
 
 ## Previews
 
