@@ -14,14 +14,20 @@ private enum ProductLoadState<Value> {
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 public struct SubKitProductView: View {
     private let productID: Product.ID
+    private let appAccountToken: UUID?
     private let prefersPromotionalIcon: Bool
     private let icon: (() -> AnyView)?
     private let placeholderIcon: (() -> AnyView)?
 
     @State private var loadState = ProductLoadState<Product>.loading
 
-    public init(id productID: Product.ID, prefersPromotionalIcon: Bool = false) {
+    public init(
+        id productID: Product.ID,
+        appAccountToken: UUID? = nil,
+        prefersPromotionalIcon: Bool = false
+    ) {
         self.productID = productID
+        self.appAccountToken = appAccountToken
         self.prefersPromotionalIcon = prefersPromotionalIcon
         self.icon = nil
         self.placeholderIcon = nil
@@ -29,10 +35,12 @@ public struct SubKitProductView: View {
 
     public init<Icon: View>(
         id productID: Product.ID,
+        appAccountToken: UUID? = nil,
         prefersPromotionalIcon: Bool = false,
         @ViewBuilder icon: @escaping () -> Icon
     ) {
         self.productID = productID
+        self.appAccountToken = appAccountToken
         self.prefersPromotionalIcon = prefersPromotionalIcon
         self.icon = { AnyView(icon()) }
         self.placeholderIcon = nil
@@ -40,11 +48,13 @@ public struct SubKitProductView: View {
 
     public init<Icon: View, Placeholder: View>(
         id productID: Product.ID,
+        appAccountToken: UUID? = nil,
         prefersPromotionalIcon: Bool = false,
         @ViewBuilder icon: @escaping () -> Icon,
         @ViewBuilder placeholderIcon: @escaping () -> Placeholder
     ) {
         self.productID = productID
+        self.appAccountToken = appAccountToken
         self.prefersPromotionalIcon = prefersPromotionalIcon
         self.icon = { AnyView(icon()) }
         self.placeholderIcon = { AnyView(placeholderIcon()) }
@@ -73,6 +83,9 @@ public struct SubKitProductView: View {
         }
         .task(id: self.productID) {
             await self.loadTask()
+        }
+        .inAppPurchaseOptions { _ in
+            self.purchaseOptions()
         }
     }
 
@@ -117,28 +130,43 @@ public struct SubKitProductView: View {
         }
         return String(describing: error)
     }
+
+    private func purchaseOptions() -> Set<Product.PurchaseOption> {
+        guard let appAccountToken = self.appAccountToken else {
+            return []
+        }
+        return [.appAccountToken(appAccountToken)]
+    }
 }
 
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 public struct SubKitStoreView: View {
     private let productIDs: [Product.ID]
+    private let appAccountToken: UUID?
     private let prefersPromotionalIcon: Bool
     private let icon: ((Product) -> AnyView)?
 
     @State private var loadState = ProductLoadState<[Product]>.loading
 
-    public init(ids productIDs: some Collection<Product.ID>, prefersPromotionalIcon: Bool = false) {
+    public init(
+        ids productIDs: some Collection<Product.ID>,
+        appAccountToken: UUID? = nil,
+        prefersPromotionalIcon: Bool = false
+    ) {
         self.productIDs = Array(productIDs)
+        self.appAccountToken = appAccountToken
         self.prefersPromotionalIcon = prefersPromotionalIcon
         self.icon = nil
     }
 
     public init<Icon: View>(
         ids productIDs: some Collection<Product.ID>,
+        appAccountToken: UUID? = nil,
         prefersPromotionalIcon: Bool = false,
         @ViewBuilder icon: @escaping (Product) -> Icon
     ) {
         self.productIDs = Array(productIDs)
+        self.appAccountToken = appAccountToken
         self.prefersPromotionalIcon = prefersPromotionalIcon
         self.icon = { AnyView(icon($0)) }
     }
@@ -166,6 +194,9 @@ public struct SubKitStoreView: View {
         }
         .task(id: self.productIDs) {
             await self.loadTask()
+        }
+        .inAppPurchaseOptions { _ in
+            self.purchaseOptions()
         }
     }
 
@@ -213,6 +244,13 @@ public struct SubKitStoreView: View {
         }
         return String(describing: error)
     }
+
+    private func purchaseOptions() -> Set<Product.PurchaseOption> {
+        guard let appAccountToken = self.appAccountToken else {
+            return []
+        }
+        return [.appAccountToken(appAccountToken)]
+    }
 }
 
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
@@ -223,6 +261,7 @@ public struct SubKitSubscriptionStoreView: View {
     }
 
     private let source: Source
+    private let appAccountToken: UUID?
     private let visibleRelationships: Product.SubscriptionRelationship
     private let marketingContent: (() -> AnyView)?
 
@@ -230,34 +269,41 @@ public struct SubKitSubscriptionStoreView: View {
 
     public init(
         groupID: String,
+        appAccountToken: UUID? = nil,
         visibleRelationships: Product.SubscriptionRelationship = .all
     ) {
         self.source = .groupID(groupID)
+        self.appAccountToken = appAccountToken
         self.visibleRelationships = visibleRelationships
         self.marketingContent = nil
     }
 
     public init<Content: View>(
         groupID: String,
+        appAccountToken: UUID? = nil,
         visibleRelationships: Product.SubscriptionRelationship = .all,
         @ViewBuilder marketingContent: @escaping () -> Content
     ) {
         self.source = .groupID(groupID)
+        self.appAccountToken = appAccountToken
         self.visibleRelationships = visibleRelationships
         self.marketingContent = { AnyView(marketingContent()) }
     }
 
-    public init(productIDs: some Collection<Product.ID>) {
+    public init(productIDs: some Collection<Product.ID>, appAccountToken: UUID? = nil) {
         self.source = .productIDs(Array(productIDs))
+        self.appAccountToken = appAccountToken
         self.visibleRelationships = .all
         self.marketingContent = nil
     }
 
     public init<Content: View>(
         productIDs: some Collection<Product.ID>,
+        appAccountToken: UUID? = nil,
         @ViewBuilder marketingContent: @escaping () -> Content
     ) {
         self.source = .productIDs(Array(productIDs))
+        self.appAccountToken = appAccountToken
         self.visibleRelationships = .all
         self.marketingContent = { AnyView(marketingContent()) }
     }
@@ -270,6 +316,9 @@ public struct SubKitSubscriptionStoreView: View {
             case .productIDs:
                 self.productBackedView
             }
+        }
+        .inAppPurchaseOptions { _ in
+            self.purchaseOptions()
         }
     }
 
@@ -360,6 +409,13 @@ public struct SubKitSubscriptionStoreView: View {
             return description
         }
         return String(describing: error)
+    }
+
+    private func purchaseOptions() -> Set<Product.PurchaseOption> {
+        guard let appAccountToken = self.appAccountToken else {
+            return []
+        }
+        return [.appAccountToken(appAccountToken)]
     }
 }
 

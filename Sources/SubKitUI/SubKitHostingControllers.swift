@@ -5,8 +5,18 @@ import UIKit
 
 @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 public final class SubKitProductViewController: UIHostingController<SubKitProductView> {
-    public init(productID: String, prefersPromotionalIcon: Bool = false) {
-        super.init(rootView: SubKitProductView(id: productID, prefersPromotionalIcon: prefersPromotionalIcon))
+    public init(
+        productID: String,
+        appAccountToken: UUID? = nil,
+        prefersPromotionalIcon: Bool = false
+    ) {
+        super.init(
+            rootView: SubKitProductView(
+                id: productID,
+                appAccountToken: appAccountToken,
+                prefersPromotionalIcon: prefersPromotionalIcon
+            )
+        )
     }
 
     @available(*, unavailable)
@@ -17,8 +27,18 @@ public final class SubKitProductViewController: UIHostingController<SubKitProduc
 
 @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 public final class SubKitStoreViewController: UIHostingController<SubKitStoreView> {
-    public init(productIDs: [String], prefersPromotionalIcon: Bool = false) {
-        super.init(rootView: SubKitStoreView(ids: productIDs, prefersPromotionalIcon: prefersPromotionalIcon))
+    public init(
+        productIDs: [String],
+        appAccountToken: UUID? = nil,
+        prefersPromotionalIcon: Bool = false
+    ) {
+        super.init(
+            rootView: SubKitStoreView(
+                ids: productIDs,
+                appAccountToken: appAccountToken,
+                prefersPromotionalIcon: prefersPromotionalIcon
+            )
+        )
     }
 
     @available(*, unavailable)
@@ -29,12 +49,22 @@ public final class SubKitStoreViewController: UIHostingController<SubKitStoreVie
 
 @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 public final class SubKitSubscriptionStoreViewController: UIHostingController<SubKitSubscriptionStoreView> {
-    public init(groupID: String) {
-        super.init(rootView: SubKitSubscriptionStoreView(groupID: groupID))
+    public init(groupID: String, appAccountToken: UUID? = nil) {
+        super.init(
+            rootView: SubKitSubscriptionStoreView(
+                groupID: groupID,
+                appAccountToken: appAccountToken
+            )
+        )
     }
 
-    public init(productIDs: [String]) {
-        super.init(rootView: SubKitSubscriptionStoreView(productIDs: productIDs))
+    public init(productIDs: [String], appAccountToken: UUID? = nil) {
+        super.init(
+            rootView: SubKitSubscriptionStoreView(
+                productIDs: productIDs,
+                appAccountToken: appAccountToken
+            )
+        )
     }
 
     @available(*, unavailable)

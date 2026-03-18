@@ -146,7 +146,10 @@ let refreshedEntitlements = try await subKit.syncPurchases()
 ```swift
 import SubKitUI
 
-SubKitProductView(id: "com.example.subkit.lifetime")
+SubKitProductView(
+  id: "com.example.subkit.lifetime",
+  appAccountToken: userID
+)
 ```
 
 ### Store View
@@ -157,7 +160,8 @@ SubKitStoreView(
     "com.example.subkit.lifetime",
     "com.example.subkit.monthly",
     "com.example.subkit.yearly",
-  ]
+  ],
+  appAccountToken: userID
 )
 ```
 
@@ -170,14 +174,18 @@ SubKitSubscriptionStoreView(
   productIDs: [
     "com.example.subkit.monthly",
     "com.example.subkit.yearly",
-  ]
+  ],
+  appAccountToken: userID
 )
 ```
 
 You can also use a subscription group ID:
 
 ```swift
-SubKitSubscriptionStoreView(groupID: "5982C3D1")
+SubKitSubscriptionStoreView(
+  groupID: "5982C3D1",
+  appAccountToken: userID
+)
 ```
 
 You can also scope the store to relationship-specific flows, such as upgrades:
@@ -185,9 +193,12 @@ You can also scope the store to relationship-specific flows, such as upgrades:
 ```swift
 SubKitSubscriptionStoreView(
   groupID: "5982C3D1",
+  appAccountToken: userID,
   visibleRelationships: .upgrade
 )
 ```
+
+`appAccountToken` is a first-class parameter on the merchandising views so StoreKit-driven purchases from those views can carry your account identifier without requiring callers to remember `.inAppPurchaseOptions`.
 
 ### StoreKit Modifiers
 
@@ -295,7 +306,8 @@ Host the SwiftUI wrappers in UIKit:
 
 ```swift
 let controller = SubKitProductViewController(
-  productID: "com.example.subkit.lifetime"
+  productID: "com.example.subkit.lifetime",
+  appAccountToken: userID
 )
 ```
 
@@ -304,7 +316,8 @@ let controller = SubKitStoreViewController(
   productIDs: [
     "com.example.subkit.lifetime",
     "com.example.subkit.monthly",
-  ]
+  ],
+  appAccountToken: userID
 )
 ```
 
@@ -313,7 +326,8 @@ let controller = SubKitSubscriptionStoreViewController(
   productIDs: [
     "com.example.subkit.monthly",
     "com.example.subkit.yearly",
-  ]
+  ],
+  appAccountToken: userID
 )
 ```
 

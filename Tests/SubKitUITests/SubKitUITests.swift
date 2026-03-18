@@ -1,6 +1,7 @@
 import SwiftUI
 import Testing
 import SubKitUI
+import Foundation
 
 @Suite
 @MainActor
@@ -11,9 +12,19 @@ struct SubKitUITests {
             return
         }
 
-        let productView = SubKitProductView(id: "com.example.subkit.lifetime")
-        let storeView = SubKitStoreView(ids: ["com.example.subkit.lifetime", "com.example.subkit.monthly"])
-        let subscriptionView = SubKitSubscriptionStoreView(groupID: "5982C3D1")
+        let appAccountToken = UUID()
+        let productView = SubKitProductView(
+            id: "com.example.subkit.lifetime",
+            appAccountToken: appAccountToken
+        )
+        let storeView = SubKitStoreView(
+            ids: ["com.example.subkit.lifetime", "com.example.subkit.monthly"],
+            appAccountToken: appAccountToken
+        )
+        let subscriptionView = SubKitSubscriptionStoreView(
+            groupID: "5982C3D1",
+            appAccountToken: appAccountToken
+        )
 
         _ = productView.body
         _ = storeView.body
