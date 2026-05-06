@@ -129,6 +129,16 @@ Each `Entitlement` includes:
 let statuses = try await subKit.subscriptionStatuses(groupID: "5982C3D1")
 ```
 
+### Intro Offer Eligibility
+
+Check whether the customer is eligible for an introductory offer on an auto-renewable subscription:
+
+```swift
+let isEligible = try await subKit.isEligibleForIntroOffer(
+  productID: "com.example.subkit.monthly"
+)
+```
+
 ### Manual Sync
 
 StoreKit 2 keeps purchases synchronized automatically in normal cases. For the rare “restore purchases” equivalent, expose a user-driven action:

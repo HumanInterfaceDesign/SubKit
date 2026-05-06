@@ -73,6 +73,15 @@ public actor SubKitClient {
         return self.sortedSubscriptionStatuses(self.subscriptionStatusesByGroupID)
     }
 
+    public func isEligibleForIntroOffer(productID: Product.ID) async throws -> Bool {
+        let product = try await self.product(for: productID)
+        guard product.type == .autoRenewable, let subscription = product.subscription else {
+            throw SubKitError.unsupportedProductType(productID: product.id, type: product.type)
+        }
+
+        return await subscription.isEligibleForIntroOffer
+    }
+
     public func syncPurchases() async throws -> [Entitlement] {
         self.ensureTransactionObserverStarted()
         try await AppStore.sync()

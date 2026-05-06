@@ -173,6 +173,45 @@ extension BaseStoreKitSuite {
         }
 
         @Test
+        func introOfferEligibilityMatchesStoreKit() async throws {
+            guard try await self.hasStoreKitTestEnvironment() else { return }
+            let session = try self.makeSession()
+            let client = self.makeClient()
+
+            let products = try await client.loadProducts()
+            let product = try #require(products.first { $0.id == TestCatalog.monthly })
+            let expectedEligibility = await product.subscription?.isEligibleForIntroOffer ?? false
+
+            let eligibility = try await client.isEligibleForIntroOffer(productID: TestCatalog.monthly)
+
+            #expect(eligibility == expectedEligibility)
+            _ = session
+        }
+
+        @Test
+        func introOfferEligibilityRejectsNonSubscription() async throws {
+            guard try await self.hasStoreKitTestEnvironment() else { return }
+            let session = try self.makeSession()
+            let client = self.makeClient()
+
+            _ = try await client.loadProducts()
+
+            do {
+                _ = try await client.isEligibleForIntroOffer(productID: TestCatalog.lifetime)
+                Issue.record("Expected intro offer eligibility to reject non-subscriptions.")
+            } catch let error as SubKitError {
+                switch error {
+                case let .unsupportedProductType(productID, type):
+                    #expect(productID == TestCatalog.lifetime)
+                    #expect(type == .nonConsumable)
+                default:
+                    Issue.record("Unexpected SubKitError: \(error)")
+                }
+            }
+            _ = session
+        }
+
+        @Test
         func transactionListenerSeesOffDevicePurchase() async throws {
             guard try await self.hasStoreKitTestEnvironment() else { return }
             let session = try self.makeSession()
